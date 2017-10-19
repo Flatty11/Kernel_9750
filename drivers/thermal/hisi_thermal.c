@@ -27,6 +27,7 @@
 
 #include "thermal_core.h"
 
+<<<<<<< HEAD
 #define HI6220_TEMP0_LAG			(0x0)
 #define HI6220_TEMP0_TH				(0x4)
 #define HI6220_TEMP0_RST_TH			(0x8)
@@ -57,6 +58,24 @@
 
 #define HI6220_DEFAULT_SENSOR		2
 #define HI3660_DEFAULT_SENSOR		1
+=======
+#define TEMP0_LAG			(0x0)
+#define TEMP0_TH			(0x4)
+#define TEMP0_RST_TH			(0x8)
+#define TEMP0_CFG			(0xC)
+#define TEMP0_EN			(0x10)
+#define TEMP0_INT_EN			(0x14)
+#define TEMP0_INT_CLR			(0x18)
+#define TEMP0_RST_MSK			(0x1C)
+#define TEMP0_VALUE			(0x28)
+
+#define HISI_TEMP_BASE			(-60000)
+#define HISI_TEMP_RESET			(100000)
+#define HISI_TEMP_STEP			(784)
+
+#define HISI_MAX_SENSORS		4
+#define HISI_DEFAULT_SENSOR		2
+>>>>>>> f7105bd03755... thermal/drivers/hisi: Encapsulate register writes into helpers
 
 struct hisi_thermal_sensor {
 	struct thermal_zone_device *tzd;
@@ -117,7 +136,62 @@ static inline int hi3660_thermal_step_to_temp(int step)
 	return HI3660_TEMP_BASE + step * HI3660_TEMP_STEP;
 }
 
+<<<<<<< HEAD
 static inline int hi3660_thermal_temp_to_step(int temp)
+=======
+static inline void hisi_thermal_set_lag(void __iomem *addr, int value)
+{
+	writel(value, addr + TEMP0_LAG);
+}
+
+static inline void hisi_thermal_alarm_clear(void __iomem *addr, int value)
+{
+	writel(value, addr + TEMP0_INT_CLR);
+}
+
+static inline void hisi_thermal_alarm_enable(void __iomem *addr, int value)
+{
+	writel(value, addr + TEMP0_INT_EN);
+}
+
+static inline void hisi_thermal_alarm_set(void __iomem *addr, int temp)
+{
+	writel(hisi_thermal_temp_to_step(temp) | 0x0FFFFFF00, addr + TEMP0_TH);
+}
+
+static inline void hisi_thermal_reset_set(void __iomem *addr, int temp)
+{
+	writel(hisi_thermal_temp_to_step(temp), addr + TEMP0_RST_TH);
+}
+
+static inline void hisi_thermal_reset_enable(void __iomem *addr, int value)
+{
+	writel(value, addr + TEMP0_RST_MSK);
+}
+
+static inline void hisi_thermal_enable(void __iomem *addr, int value)
+{
+	writel(value, addr + TEMP0_EN);
+}
+
+static inline void hisi_thermal_sensor_select(void __iomem *addr, int sensor)
+{
+	writel((sensor << 12), addr + TEMP0_CFG);
+}
+
+static inline int hisi_thermal_get_temperature(void __iomem *addr)
+{
+	return hisi_thermal_step_to_temp(readl(addr + TEMP0_VALUE));
+}
+
+static inline void hisi_thermal_hdak_set(void __iomem *addr, int value)
+{
+	writel(value, addr + TEMP0_CFG);
+}
+
+static long hisi_thermal_get_sensor_temp(struct hisi_thermal_data *data,
+					 struct hisi_thermal_sensor *sensor)
+>>>>>>> f7105bd03755... thermal/drivers/hisi: Encapsulate register writes into helpers
 {
 	return DIV_ROUND_UP(temp - HI3660_TEMP_BASE, HI3660_TEMP_STEP);
 }
@@ -159,6 +233,7 @@ static inline void hi6220_thermal_set_lag(void __iomem *addr, int value)
 			addr + HI6220_TEMP0_LAG);
 }
 
+<<<<<<< HEAD
 static inline void hi6220_thermal_alarm_clear(void __iomem *addr, int value)
 {
 	writel(value, addr + HI6220_TEMP0_INT_CLR);
@@ -179,16 +254,34 @@ static inline void hi6220_thermal_reset_set(void __iomem *addr, int temp)
 {
 	writel(hi6220_thermal_temp_to_step(temp), addr + HI6220_TEMP0_RST_TH);
 }
+=======
+	/* disable interrupt */
+	hisi_thermal_alarm_enable(data->regs, 0);
+	hisi_thermal_alarm_clear(data->regs, 1);
+
+	/* disable module firstly */
+	hisi_thermal_enable(data->regs, 0);
+
+	/* select sensor id */
+	hisi_thermal_sensor_select(data->regs, sensor->id);
+
+	/* enable module */
+	hisi_thermal_enable(data->regs, 1);
+>>>>>>> f7105bd03755... thermal/drivers/hisi: Encapsulate register writes into helpers
 
 static inline void hi6220_thermal_reset_enable(void __iomem *addr, int value)
 {
 	writel(value, addr + HI6220_TEMP0_RST_MSK);
 }
 
+<<<<<<< HEAD
 static inline void hi6220_thermal_enable(void __iomem *addr, int value)
 {
 	writel(value, addr + HI6220_TEMP0_EN);
 }
+=======
+	val = hisi_thermal_get_temperature(data->regs);
+>>>>>>> f7105bd03755... thermal/drivers/hisi: Encapsulate register writes into helpers
 
 static inline int hi6220_thermal_get_temperature(void __iomem *addr)
 {
@@ -229,6 +322,7 @@ static inline void hi3660_thermal_alarm_set(void __iomem *addr,
 	writel(value, addr + HI3660_TH(id));
 }
 
+<<<<<<< HEAD
 static inline int hi3660_thermal_get_temperature(void __iomem *addr, int id)
 {
 	return hi3660_thermal_step_to_temp(readl(addr + HI3660_TEMP(id)));
@@ -338,6 +432,29 @@ static int hi6220_thermal_enable_sensor(struct hisi_thermal_data *data)
 	/* enable module */
 	hi6220_thermal_reset_enable(data->regs, 1);
 	hi6220_thermal_enable(data->regs, 1);
+=======
+	/* setting the hdak time */
+	hisi_thermal_hdak_set(data->regs, 0);
+
+	/* disable module firstly */
+	hisi_thermal_reset_enable(data->regs, 0);
+	hisi_thermal_enable(data->regs, 0);
+
+	/* select sensor id */
+	hisi_thermal_sensor_select(data->regs, sensor->id);
+
+	/* enable for interrupt */
+	hisi_thermal_alarm_set(data->regs, sensor->thres_temp);
+
+	hisi_thermal_reset_set(data->regs, HISI_TEMP_RESET);
+
+	/* enable module */
+	hisi_thermal_reset_enable(data->regs, 1);
+	hisi_thermal_enable(data->regs, 1);
+
+	hisi_thermal_alarm_clear(data->regs, 0);
+	hisi_thermal_alarm_enable(data->regs, 1);
+>>>>>>> f7105bd03755... thermal/drivers/hisi: Encapsulate register writes into helpers
 
 	hi6220_thermal_alarm_clear(data->regs, 0);
 	hi6220_thermal_alarm_enable(data->regs, 1);
@@ -350,8 +467,15 @@ static int hi3660_thermal_enable_sensor(struct hisi_thermal_data *data)
 	unsigned int value;
 	struct hisi_thermal_sensor *sensor = &data->sensor;
 
+<<<<<<< HEAD
 	/* disable interrupt */
 	hi3660_thermal_alarm_enable(data->regs, sensor->id, 0);
+=======
+	/* disable sensor module */
+	hisi_thermal_enable(data->regs, 0);
+	hisi_thermal_alarm_enable(data->regs, 0);
+	hisi_thermal_reset_enable(data->regs, 0);
+>>>>>>> f7105bd03755... thermal/drivers/hisi: Encapsulate register writes into helpers
 
 	/* setting lag value between current temp and the threshold */
 	hi3660_thermal_set_lag(data->regs, sensor->id, HI3660_TEMP_LAG);

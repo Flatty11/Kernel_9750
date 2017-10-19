@@ -460,7 +460,6 @@ static irqreturn_t hisi_thermal_alarm_irq_thread(int irq, void *dev)
 	if (temp >= sensor->thres_temp) {
 		dev_crit(&data->pdev->dev, "THERMAL ALARM: %d > %d\n",
 			 temp, sensor->thres_temp);
-
 		thermal_zone_device_update(data->sensor.tzd,
 					   THERMAL_EVENT_UNSPECIFIED);
 

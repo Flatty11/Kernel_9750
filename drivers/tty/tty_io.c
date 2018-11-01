@@ -1283,8 +1283,6 @@ static int tty_reopen(struct tty_struct *tty)
 	if (retval == 0)
 		tty->count++;
 
-out_unlock:
-	tty_ldisc_unlock(tty);
 	return retval;
 }
 

@@ -1652,7 +1652,7 @@ static void lo_release(struct gendisk *disk, fmode_t mode)
 		 */
 		err = loop_clr_fd(lo);
 		if (!err)
-			goto unlock_index;
+			return;
 	} else if (lo->lo_state == Lo_bound) {
 		/*
 		 * Otherwise keep thread (if running) and config,

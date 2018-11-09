@@ -1847,6 +1847,7 @@ struct xhci_hcd {
 #define XHCI_SUSPEND_DELAY	BIT_ULL(30)
 /* For enabling USB2.0 L1 mode */
 #define XHCI_LPM_L1_SUPPORT	BIT_ULL(31)
+#define XHCI_RESET_PLL_ON_DISCONNECT	BIT_ULL(34)
 
 	unsigned int		num_active_eps;
 	unsigned int		limit_active_eps;

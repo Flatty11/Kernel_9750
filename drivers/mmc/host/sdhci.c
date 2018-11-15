@@ -118,11 +118,11 @@ void sdhci_dumpregs(struct sdhci_host *host)
 	       sdhci_readb(host, SDHCI_TIMEOUT_CONTROL),
 	       sdhci_readl(host, SDHCI_INT_STATUS));
 	SDHCI_DUMP("Int enab:  0x%08x | Sig enab: 0x%08x\n",
-	       sdhci_readl(host, SDHCI_INT_ENABLE),
-	       sdhci_readl(host, SDHCI_SIGNAL_ENABLE));
-	SDHCI_DUMP("AC12 err:  0x%08x | Slot int: 0x%08x\n",
-		   sdhci_readw(host, SDHCI_ACMD12_ERR),
-	       sdhci_readw(host, SDHCI_SLOT_INT_STATUS));
+		   sdhci_readl(host, SDHCI_INT_ENABLE),
+		   sdhci_readl(host, SDHCI_SIGNAL_ENABLE));
+	SDHCI_DUMP("ACmd stat: 0x%08x | Slot int: 0x%08x\n",
+		   sdhci_readw(host, SDHCI_AUTO_CMD_STATUS),
+		   sdhci_readw(host, SDHCI_SLOT_INT_STATUS));
 	SDHCI_DUMP("Caps:      0x%08x | Caps_1:   0x%08x\n",
 	       sdhci_readl(host, SDHCI_CAPABILITIES),
 	       sdhci_readl(host, SDHCI_CAPABILITIES_1));

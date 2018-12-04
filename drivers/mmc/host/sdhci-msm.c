@@ -1899,12 +1899,25 @@ static int sdhci_msm_pm_qos_parse_latency(struct device *dev, const char *name,
 	if (!values)
 		return -ENOMEM;
 
+<<<<<<< HEAD
 	for (i = 0; i < SDHCI_POWER_POLICY_NUM * nr_groups; i++) {
 		group = i / SDHCI_POWER_POLICY_NUM;
 		cfg = i % SDHCI_POWER_POLICY_NUM;
 		of_property_read_u32_index(np, name, i,
 				&(values[group].latency[cfg]));
 	}
+=======
+static const struct sdhci_ops sdhci_msm_ops = {
+	.reset = sdhci_reset,
+	.set_clock = sdhci_msm_set_clock,
+	.get_min_clock = sdhci_msm_get_min_clock,
+	.get_max_clock = sdhci_msm_get_max_clock,
+	.set_bus_width = sdhci_set_bus_width,
+	.set_uhs_signaling = sdhci_msm_set_uhs_signaling,
+	.voltage_switch = sdhci_msm_voltage_switch,
+	.write_w = sdhci_msm_write_w,
+};
+>>>>>>> 4abb6960f61c... mmc: sdhci-msm: Disable CDR function on TX
 
 	*latency = values;
 	return 0;

@@ -5256,6 +5256,7 @@ static int qsmmuv500_ecats_lock(struct arm_smmu_domain *smmu_domain,
 	return 0;
 }
 
+<<<<<<< HEAD
 static void qsmmuv500_ecats_unlock(struct arm_smmu_domain *smmu_domain,
 					struct qsmmuv500_tbu_device *tbu,
 					unsigned long *flags)
@@ -5268,6 +5269,26 @@ static void qsmmuv500_ecats_unlock(struct arm_smmu_domain *smmu_domain,
 		writel_relaxed(0, tbu->status_reg);
 	spin_unlock_irqrestore(&smmu->atos_lock, *flags);
 }
+=======
+ARM_SMMU_MATCH_DATA(smmu_generic_v1, ARM_SMMU_V1, GENERIC_SMMU);
+ARM_SMMU_MATCH_DATA(smmu_generic_v2, ARM_SMMU_V2, GENERIC_SMMU);
+ARM_SMMU_MATCH_DATA(arm_mmu401, ARM_SMMU_V1_64K, GENERIC_SMMU);
+ARM_SMMU_MATCH_DATA(arm_mmu500, ARM_SMMU_V2, ARM_MMU500);
+ARM_SMMU_MATCH_DATA(cavium_smmuv2, ARM_SMMU_V2, CAVIUM_SMMUV2);
+ARM_SMMU_MATCH_DATA(qcom_smmuv2, ARM_SMMU_V2, QCOM_SMMUV2);
+
+static const struct of_device_id arm_smmu_of_match[] = {
+	{ .compatible = "arm,smmu-v1", .data = &smmu_generic_v1 },
+	{ .compatible = "arm,smmu-v2", .data = &smmu_generic_v2 },
+	{ .compatible = "arm,mmu-400", .data = &smmu_generic_v1 },
+	{ .compatible = "arm,mmu-401", .data = &arm_mmu401 },
+	{ .compatible = "arm,mmu-500", .data = &arm_mmu500 },
+	{ .compatible = "cavium,smmu-v2", .data = &cavium_smmuv2 },
+	{ .compatible = "qcom,smmu-v2", .data = &qcom_smmuv2 },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, arm_smmu_of_match);
+>>>>>>> 4e8ca0d44cde... iommu/arm-smmu: Add support for qcom,smmu-v2 variant
 
 /*
  * Zero means failure.

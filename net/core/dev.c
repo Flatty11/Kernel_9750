@@ -7914,6 +7914,7 @@ static void netdev_wait_allrefs(struct net_device *dev)
 
 		refcnt = netdev_refcnt_read(dev);
 
+<<<<<<< HEAD
 		if (time_after(jiffies, warning_time + 5 * HZ)) {
 			/*
 			 * rmnet dev hold will not move on to next creation,
@@ -7926,7 +7927,7 @@ static void netdev_wait_allrefs(struct net_device *dev)
 			}
 		}
 
-		if (time_after(jiffies, warning_time + 10 * HZ)) {
+		if (refcnt && time_after(jiffies, warning_time + 10 * HZ)) {
 			pr_emerg("unregister_netdevice: waiting for %s to become free. Usage count = %d\n",
 				 dev->name, refcnt);
 			warning_time = jiffies;

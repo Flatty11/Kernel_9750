@@ -1,0 +1,8 @@
+# Change paths to toochains in build_kernel.sh #
+
+# after build is done run from the kernel folder: #
+
+cat out/arch/arm64/boot/Image-dtb-hdr out/arch/arm64/boot/Image > /home/flatty/kernel/kernel && cd /home/flatty/kernel && ./magiskboot repack recovery.img && adb push new-boot.img /data/local/tmp && adb shell && cd && su -
+
+# to flash the kernel directly from phone, continue #
+cat /data/local/tmp/new-boot.img /dev/zero > /dev/block/by-name/recovery && sync ; sync ; sync ; reboot recovery 

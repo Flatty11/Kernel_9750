@@ -1033,13 +1033,13 @@ config REFCOUNT_FULL
 	  against various use-after-free conditions that can be used in
 	  security flaw exploits.
 
-config PANIC_ON_REFCOUNT_ERROR
-	bool "Kernel panic on refcount error detection"
-	depends on REFCOUNT_FULL
+config HAVE_ARCH_COMPILER_H
+	bool
 	help
-	  If enabled, the kernel will panic when the refcount library
-	  has detected any type of error (e.g. potential use-after-free
-	  or potential memory-leaks) with an object associated with that
-	  reference counter.
+	  An architecture can select this if it provides an
+	  asm/compiler.h header that should be included after
+	  linux/compiler-*.h in order to override macro definitions that those
+	  headers generally provide.
+
 
 source "kernel/gcov/Kconfig"

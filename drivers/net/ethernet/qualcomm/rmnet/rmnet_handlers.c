@@ -316,8 +316,6 @@ rx_handler_result_t rmnet_rx_handler(struct sk_buff **pskb)
 	if (skb->pkt_type == PACKET_LOOPBACK)
 		return RX_HANDLER_PASS;
 
-	trace_rmnet_low(RMNET_MODULE, RMNET_RCV_FROM_PND, 0xDEF,
-			0xDEF, 0xDEF, 0xDEF, NULL, NULL);
 	dev = skb->dev;
 	port = rmnet_get_port(dev);
 

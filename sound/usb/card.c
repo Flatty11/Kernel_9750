@@ -749,8 +749,7 @@ static int usb_audio_probe(struct usb_interface *intf,
 		atomic_dec(&chip->active);
 		if (!chip->num_interfaces)
 			snd_card_free(chip->card);
-		else
-	}
+}
 	mutex_unlock(&register_mutex);
 	return err;
 }

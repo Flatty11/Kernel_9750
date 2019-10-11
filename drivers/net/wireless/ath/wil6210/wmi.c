@@ -3082,7 +3082,6 @@ int wmi_suspend(struct wil6210_priv *wil)
 		goto out;
 	}
 
-<<<<<<< HEAD
 	wil_dbg_wmi(wil, "waiting for suspend_response_completed\n");
 
 	rc = wait_event_interruptible_timeout(wil->wq,
@@ -3096,29 +3095,6 @@ int wmi_suspend(struct wil6210_priv *wil)
 		else
 			wil->suspend_stats.rejected_by_device++;
 		rc = -EBUSY;
-=======
-int wmi_set_ie(struct wil6210_priv *wil, u8 type, u16 ie_len, const void *ie)
-{
-	static const char *const names[] = {
-		[WMI_FRAME_BEACON]	= "BEACON",
-		[WMI_FRAME_PROBE_REQ]	= "PROBE_REQ",
-		[WMI_FRAME_PROBE_RESP]	= "WMI_FRAME_PROBE_RESP",
-		[WMI_FRAME_ASSOC_REQ]	= "WMI_FRAME_ASSOC_REQ",
-		[WMI_FRAME_ASSOC_RESP]	= "WMI_FRAME_ASSOC_RESP",
-	};
-	int rc;
-	u16 len = sizeof(struct wmi_set_appie_cmd) + ie_len;
-	struct wmi_set_appie_cmd *cmd;
-
-	if (len < ie_len) {
-		rc = -EINVAL;
-		goto out;
-	}
-
-	cmd = kzalloc(len, GFP_KERNEL);
-	if (!cmd) {
-		rc = -ENOMEM;
->>>>>>> 107b02c81a87... wil6210: missing length check in wmi_set_ie
 		goto out;
 	}
 

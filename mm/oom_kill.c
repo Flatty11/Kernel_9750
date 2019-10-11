@@ -629,7 +629,6 @@ void wake_oom_reaper(struct task_struct *tsk)
 	if (!oom_reaper_th)
 		return;
 
-<<<<<<< HEAD
 	/*
 	 * Move the lock here to avoid scenario of queuing
 	 * the same task by both OOM killer and any other SIGKILL

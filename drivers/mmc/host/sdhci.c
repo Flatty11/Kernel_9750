@@ -118,11 +118,11 @@ void sdhci_dumpregs(struct sdhci_host *host)
 	       sdhci_readb(host, SDHCI_TIMEOUT_CONTROL),
 	       sdhci_readl(host, SDHCI_INT_STATUS));
 	SDHCI_DUMP("Int enab:  0x%08x | Sig enab: 0x%08x\n",
-		   sdhci_readl(host, SDHCI_INT_ENABLE),
-		   sdhci_readl(host, SDHCI_SIGNAL_ENABLE));
-	SDHCI_DUMP("ACmd stat: 0x%08x | Slot int: 0x%08x\n",
-		   sdhci_readw(host, SDHCI_AUTO_CMD_STATUS),
-		   sdhci_readw(host, SDHCI_SLOT_INT_STATUS));
+	       sdhci_readl(host, SDHCI_INT_ENABLE),
+	       sdhci_readl(host, SDHCI_SIGNAL_ENABLE));
+	SDHCI_DUMP("AC12 err:  0x%08x | Slot int: 0x%08x\n",
+		   sdhci_readw(host, SDHCI_ACMD12_ERR),
+	       sdhci_readw(host, SDHCI_SLOT_INT_STATUS));
 	SDHCI_DUMP("Caps:      0x%08x | Caps_1:   0x%08x\n",
 	       sdhci_readl(host, SDHCI_CAPABILITIES),
 	       sdhci_readl(host, SDHCI_CAPABILITIES_1));
@@ -895,11 +895,6 @@ static void sdhci_set_transfer_irqs(struct sdhci_host *host)
 	else
 		host->ier = (host->ier & ~dma_irqs) | pio_irqs;
 
-	if (host->flags & (SDHCI_AUTO_CMD23 | SDHCI_AUTO_CMD12))
-		host->ier |= SDHCI_INT_AUTO_CMD_ERR;
-	else
-		host->ier &= ~SDHCI_INT_AUTO_CMD_ERR;
-
 	sdhci_writel(host, host->ier, SDHCI_INT_ENABLE);
 	sdhci_writel(host, host->ier, SDHCI_SIGNAL_ENABLE);
 }
@@ -1145,7 +1140,8 @@ static bool sdhci_needs_reset(struct sdhci_host *host, struct mmc_request *mrq)
 	return (!(host->flags & SDHCI_DEVICE_DEAD) &&
 		((mrq->cmd && mrq->cmd->error) ||
 		 (mrq->sbc && mrq->sbc->error) ||
-		 (mrq->data && mrq->data->stop && mrq->data->stop->error) ||
+		 (mrq->data && ((mrq->data->error && !mrq->data->stop) ||
+				(mrq->data->stop && mrq->data->stop->error))) ||
 		 (host->quirks & SDHCI_QUIRK_RESET_AFTER_REQUEST)));
 }
 
@@ -1197,16 +1193,6 @@ static void sdhci_finish_data(struct sdhci_host *host)
 	host->data = NULL;
 	host->data_cmd = NULL;
 
-	/*
-	 * The controller needs a reset of internal state machines upon error
-	 * conditions.
-	 */
-	if (data->error) {
-		if (!host->cmd || host->cmd == data_cmd)
-			sdhci_do_reset(host, SDHCI_RESET_CMD);
-		sdhci_do_reset(host, SDHCI_RESET_DATA);
-	}
-
 	if ((host->flags & (SDHCI_REQ_USE_DMA | SDHCI_USE_ADMA)) ==
 	    (SDHCI_REQ_USE_DMA | SDHCI_USE_ADMA))
 		sdhci_adma_table_post(host, data);
@@ -1231,6 +1217,17 @@ static void sdhci_finish_data(struct sdhci_host *host)
 	if (data->stop &&
 	    (data->error ||
 	     !data->mrq->sbc)) {
+
+		/*
+		 * The controller needs a reset of internal state machines
+		 * upon error conditions.
+		 */
+		if (data->error) {
+			if (!host->cmd || host->cmd == data_cmd)
+				sdhci_do_reset(host, SDHCI_RESET_CMD);
+			sdhci_do_reset(host, SDHCI_RESET_DATA);
+		}
+
 		/*
 		 * 'cap_cmd_during_tfr' request must not use the command line
 		 * after mmc_command_done() has been called. It is upper layer's
@@ -3101,24 +3098,9 @@ static void sdhci_timeout_data_timer(unsigned long data)
  *                                                                           *
 \*****************************************************************************/
 
-static void sdhci_cmd_irq(struct sdhci_host *host, u32 intmask, u32 *intmask_p)
+static void sdhci_cmd_irq(struct sdhci_host *host, u32 intmask)
 {
 	u16 auto_cmd_status;
-	/* Handle auto-CMD12 error */
-	if (intmask & SDHCI_INT_AUTO_CMD_ERR && host->data_cmd) {
-		struct mmc_request *mrq = host->data_cmd->mrq;
-		u16 auto_cmd_status = sdhci_readw(host, SDHCI_AUTO_CMD_STATUS);
-		int data_err_bit = (auto_cmd_status & SDHCI_AUTO_CMD_TIMEOUT_ERR) ?
-				   SDHCI_INT_DATA_TIMEOUT_ERR :
-				   SDHCI_INT_DATA_CRC_ERR;
-
-		/* Treat auto-CMD12 error the same as data error */
-		if (!mrq->sbc && (host->flags & SDHCI_AUTO_CMD12)) {
-			*intmask_p |= data_err_bit;
-			return;
-		}
-	}
-
 	if (!host->cmd) {
 		/*
 		 * SDHCI recovers from errors by resetting the cmd and data
@@ -3166,32 +3148,28 @@ static void sdhci_cmd_irq(struct sdhci_host *host, u32 intmask, u32 *intmask_p)
 				host->cmd->error = -EILSEQ;
 		}
 
-		/* Treat data command CRC error the same as data CRC error */
+		/*
+		 * If this command initiates a data phase and a response
+		 * CRC error is signalled, the card can start transferring
+		 * data - the card may have received the command without
+		 * error.  We must not terminate the mmc_request early.
+		 *
+		 * If the card did not receive the command or returned an
+		 * error which prevented it sending data, the data phase
+		 * will time out.
+		 *
+		 * Even in case of cmd INDEX OR ENDBIT error we
+		 * handle it the same way.
+		 */
 		if (host->cmd->data &&
 		    (((intmask & (SDHCI_INT_CRC | SDHCI_INT_TIMEOUT)) ==
 		     SDHCI_INT_CRC) || (host->cmd->error == -EILSEQ))) {
 			host->cmd = NULL;
-			*intmask_p |= SDHCI_INT_DATA_CRC;
 			return;
 		}
 
 		sdhci_finish_mrq(host, host->cmd->mrq);
 		return;
-	}
-
-	/* Handle auto-CMD23 error */
-	if (intmask & SDHCI_INT_AUTO_CMD_ERR) {
-		struct mmc_request *mrq = host->cmd->mrq;
-		u16 auto_cmd_status = sdhci_readw(host, SDHCI_AUTO_CMD_STATUS);
-		int err = (auto_cmd_status & SDHCI_AUTO_CMD_TIMEOUT_ERR) ?
-			  -ETIMEDOUT :
-			  -EILSEQ;
-
-		if (mrq->sbc && (host->flags & SDHCI_AUTO_CMD23)) {
-			mrq->sbc->error = err;
-			sdhci_finish_mrq(host, mrq);
-			return;
-		}
 	}
 
 	if (intmask & SDHCI_INT_RESPONSE)
@@ -3571,7 +3549,7 @@ static irqreturn_t sdhci_irq(int irq, void *dev_id)
 			if ((host->quirks2 & SDHCI_QUIRK2_SLOW_INT_CLR) &&
 				(host->clock <= 400000))
 				udelay(40);
-			sdhci_cmd_irq(host, intmask & SDHCI_INT_CMD_MASK, &intmask);
+			sdhci_cmd_irq(host, intmask & SDHCI_INT_CMD_MASK);
 		}
 
 		if (intmask & SDHCI_INT_DATA_MASK) {

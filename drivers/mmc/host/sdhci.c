@@ -3108,9 +3108,9 @@ static void sdhci_cmd_irq(struct sdhci_host *host, u32 intmask, u32 *intmask_p)
 	if (intmask & SDHCI_INT_AUTO_CMD_ERR && host->data_cmd) {
 		struct mmc_request *mrq = host->data_cmd->mrq;
 		u16 auto_cmd_status = sdhci_readw(host, SDHCI_AUTO_CMD_STATUS);
-		int data_err_bit = (auto_cmd_status & SDHCI_AUTO_CMD_TIMEOUT) ?
-				   SDHCI_INT_DATA_TIMEOUT :
-				   SDHCI_INT_DATA_CRC;
+		int data_err_bit = (auto_cmd_status & SDHCI_AUTO_CMD_TIMEOUT_ERR) ?
+				   SDHCI_INT_DATA_TIMEOUT_ERR :
+				   SDHCI_INT_DATA_CRC_ERR;
 
 		/* Treat auto-CMD12 error the same as data error */
 		if (!mrq->sbc && (host->flags & SDHCI_AUTO_CMD12)) {
@@ -3183,7 +3183,7 @@ static void sdhci_cmd_irq(struct sdhci_host *host, u32 intmask, u32 *intmask_p)
 	if (intmask & SDHCI_INT_AUTO_CMD_ERR) {
 		struct mmc_request *mrq = host->cmd->mrq;
 		u16 auto_cmd_status = sdhci_readw(host, SDHCI_AUTO_CMD_STATUS);
-		int err = (auto_cmd_status & SDHCI_AUTO_CMD_TIMEOUT) ?
+		int err = (auto_cmd_status & SDHCI_AUTO_CMD_TIMEOUT_ERR) ?
 			  -ETIMEDOUT :
 			  -EILSEQ;
 

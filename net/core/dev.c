@@ -7914,7 +7914,6 @@ static void netdev_wait_allrefs(struct net_device *dev)
 
 		refcnt = netdev_refcnt_read(dev);
 
-<<<<<<< HEAD
 		if (time_after(jiffies, warning_time + 5 * HZ)) {
 			/*
 			 * rmnet dev hold will not move on to next creation,

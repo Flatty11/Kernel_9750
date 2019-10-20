@@ -7411,6 +7411,7 @@ static void rtl8152_disconnect(struct usb_interface *intf)
 				      USB_CDC_PROTO_NONE) \
 
 /* table of devices that work with this driver */
+<<<<<<< HEAD
 static struct usb_device_id rtl8152_table[] = {
 	/* Realtek */
 	{REALTEK_USB_DEVICE_INTERFACE_CLASS(VENDOR_ID_REALTEK, 0x8050)},

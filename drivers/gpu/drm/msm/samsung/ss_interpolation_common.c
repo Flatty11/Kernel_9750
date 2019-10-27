@@ -1,4 +1,4 @@
- /* =================================================================
+/* =================================================================
  *
  *
  *	Description:  samsung display common file
@@ -11,7 +11,6 @@
 /*
 <one line to give the program's name and a brief idea of what it does.>
 Copyright (C) 2012, Samsung Electronics. All rights reserved.
-
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -784,6 +783,11 @@ static int find_normal_candela(struct samsung_display_driver_data *vdd)
 	if (index < 0) {
 		LCD_INFO("fail to find %d candela at normal.candela_table\n", candela);
 	}
+#ifdef CONFIG_HYBRID_DC_DIMMING
+	if (index > GAMMA_VOLTAGE_THRESHOLD) {
+		index = GAMMA_VOLTAGE_THRESHOLD;
+	}
+#endif
 
 	return index;
 }
@@ -902,8 +906,12 @@ int br_interpolation_generate_event(struct samsung_display_driver_data *vdd, enu
 			memcpy(buf, vdd->panel_br_info.hmd.aor[candela_index], aor_size);
 		break;
 	case GEN_NORMAL_INTERPOLATION_AOR:
-		memcpy(buf, ss_itp->normal.br_aor_table[vdd->br.pac_cd_idx].aor_hex_string, aor_size);
-		vdd->br.aor_data = ss_itp->normal.br_aor_table[vdd->br.pac_cd_idx].aor_percent_x10000 / 100;
+#ifdef CONFIG_HYBRID_DC_DIMMING
+		if (vdd->br.pac_cd_idx < AOR_DISABLE_THRESHOLD)
+			memcpy(buf, ss_itp->normal.br_aor_table[AOR_DISABLE_THRESHOLD].aor_hex_string, aor_size);
+		else
+#endif
+			memcpy(buf, ss_itp->normal.br_aor_table[vdd->br.pac_cd_idx].aor_hex_string, aor_size);vdd->br.aor_data = ss_itp->normal.br_aor_table[vdd->br.pac_cd_idx].aor_percent_x10000 / 100;
 		break;
 	case GEN_HBM_INTERPOLATION_AOR:
 		candela_index = find_hbm_candela(vdd);
@@ -1134,4 +1142,3 @@ void debug_interpolation_log(struct samsung_display_driver_data *vdd)
 	debug_normal_interpolation(vdd);
 	debug_hbm_interpolation(vdd);
 }
-

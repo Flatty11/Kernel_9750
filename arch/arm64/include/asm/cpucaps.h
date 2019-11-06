@@ -42,10 +42,12 @@
 #define ARM64_HAS_DCPOP				21
 #define ARM64_UNMAP_KERNEL_AT_EL0		23
 #define ARM64_HARDEN_BRANCH_PREDICTOR		24
-#define ARM64_SSBD				25
-#define ARM64_MISMATCHED_CACHE_TYPE		26
-#define ARM64_SSBS				27
+#define ARM64_HW_DBM				25
+#define ARM64_SSBD				26
+#define ARM64_MISMATCHED_CACHE_TYPE		27
+#define ARM64_HAS_CRC32				28
+#define ARM64_SSBS				29
 
-#define ARM64_NCAPS				28
+#define ARM64_NCAPS				30
 
 #endif /* __ASM_CPUCAPS_H */
